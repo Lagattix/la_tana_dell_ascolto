@@ -7,20 +7,17 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <style>
     body { margin: 0; padding: 0; }
+    img.podcast-img { width: 50px; height: 50px; object-fit: cover; border-radius: 0.5rem; margin-right: 0.5rem; }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white">
   <div class="p-6 pb-32">
     <div class="max-w-7xl mx-auto">
       <header class="mb-8">
-        <h1 class="text-4xl font-bold mb-2 flex items-center gap-3">
-          <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-          </svg>
-          Podcast App
-        </h1>
+        <h1 class="text-4xl font-bold mb-2 flex items-center gap-3">🎙 Podcast App</h1>
         <p class="text-purple-200">I tuoi podcast preferiti in un solo posto</p>
       </header>
 
@@ -32,11 +29,13 @@
             <button id="btnAddPodcast" class="p-2 bg-purple-500 hover:bg-purple-600 rounded-lg transition">➕</button>
           </div>
 
+          <!-- Form Aggiungi Podcast -->
           <div id="addForm" class="hidden mb-4 p-4 bg-white/5 rounded-lg space-y-3">
             <input type="text" id="inputTitle" placeholder="Titolo podcast" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50">
             <input type="text" id="inputAuthor" placeholder="Autore" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50">
             <textarea id="inputDescription" placeholder="Descrizione" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50" rows="2"></textarea>
-            <button id="btnSavePodcast" class="w-full py-2 bg-green-500 hover:bg-green-600 rounded-lg transition font-medium">Aggiungi</button>
+            <input type="file" id="inputImage" accept="image/*" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50">
+            <button id="btnSavePodcast" class="w-full py-2 bg-green-500 hover:bg-green-600 rounded-lg transition font-medium">Aggiungi Podcast</button>
           </div>
 
           <div id="podcastList" class="space-y-2"></div>
@@ -45,13 +44,24 @@
         <!-- Dettagli e Episodi -->
         <div class="lg:col-span-2 bg-white/10 backdrop-blur-lg rounded-2xl p-6">
           <div id="podcastDetails" class="hidden">
-            <div class="mb-6">
-              <h2 id="detailTitle" class="text-3xl font-bold mb-2"></h2>
-              <p id="detailAuthor" class="text-lg text-purple-200 mb-2"></p>
-              <p id="detailDescription" class="text-purple-300"></p>
+            <div class="mb-6 flex items-center gap-4">
+              <img id="detailImage" class="w-24 h-24 rounded-lg object-cover" src="" alt="">
+              <div>
+                <h2 id="detailTitle" class="text-3xl font-bold mb-2"></h2>
+                <p id="detailAuthor" class="text-lg text-purple-200 mb-2"></p>
+                <p id="detailDescription" class="text-purple-300"></p>
+              </div>
             </div>
             <h3 class="text-xl font-semibold mb-4">Episodi</h3>
             <div id="episodeList" class="space-y-3"></div>
+
+            <!-- Form Aggiungi Episodio -->
+            <div class="mt-4 p-4 bg-white/10 rounded-lg">
+              <h4 class="font-semibold mb-2">Aggiungi Episodio</h4>
+              <input type="text" id="inputEpisodeTitle" placeholder="Titolo episodio" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50 mb-2">
+              <input type="file" id="inputEpisodeFile" accept="audio/*" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50 mb-2">
+              <button id="btnSaveEpisode" class="w-full py-2 bg-green-500 hover:bg-green-600 rounded-lg transition font-medium">Aggiungi Episodio</button>
+            </div>
           </div>
           <div id="emptyState" class="h-full flex items-center justify-center text-purple-300">
             <p class="text-xl">Seleziona un podcast per vedere gli episodi</p>
@@ -61,12 +71,11 @@
     </div>
   </div>
 
-  <audio id="audioPlayer"></audio>
+  <audio id="audioPlayer" controls class="fixed bottom-4 left-4 w-1/3"></audio>
 
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <script>
-    // --------------------------
-    // CONFIGURAZIONE FIREBASE
-    // --------------------------
+    // FIREBASE
     const firebaseConfig = {
       apiKey: "AIzaSyBr1VaUdcpi8_M6JOfPMjs8w1rpRYDzvnI",
       authDomain: "la-tana-dell-ascolto.firebaseapp.com",
@@ -78,23 +87,18 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const storage = firebase.storage();
 
-    // --------------------------
-    // LOGICA PODCAST
-    // --------------------------
     let podcasts = [];
     let selectedPodcast = null;
-    let currentEpisode = null;
-    let isPlaying = false;
 
-    const audio = document.getElementById('audioPlayer');
     const podcastList = document.getElementById('podcastList');
     const episodeList = document.getElementById('episodeList');
     const podcastDetails = document.getElementById('podcastDetails');
     const emptyState = document.getElementById('emptyState');
     const addForm = document.getElementById('addForm');
 
-    // Carica podcast da Firebase
+    // Carica podcast
     function fetchPodcasts() {
       db.ref('podcasts').on('value', snapshot => {
         const data = snapshot.val();
@@ -105,13 +109,11 @@
 
     function renderPodcasts() {
       podcastList.innerHTML = podcasts.map(podcast => `
-        <div onclick="selectPodcast('${podcast.id}')" class="p-4 rounded-lg cursor-pointer transition ${selectedPodcast?.id === podcast.id ? 'bg-purple-500' : 'bg-white/5 hover:bg-white/10'}">
-          <div class="flex justify-between items-start">
-            <div class="flex-1">
-              <h3 class="font-semibold">${podcast.title}</h3>
-              <p class="text-sm text-purple-200">${podcast.author}</p>
-            </div>
-            <button onclick="event.stopPropagation(); deletePodcast('${podcast.id}')" class="p-2 hover:bg-red-500 rounded-lg transition">🗑️</button>
+        <div onclick="selectPodcast('${podcast.id}')" class="p-4 rounded-lg cursor-pointer transition ${selectedPodcast?.id === podcast.id ? 'bg-purple-500' : 'bg-white/5 hover:bg-white/10'} flex items-center">
+          ${podcast.imageUrl ? `<img src="${podcast.imageUrl}" class="podcast-img" />` : ''}
+          <div>
+            <h3 class="font-semibold">${podcast.title}</h3>
+            <p class="text-sm text-purple-200">${podcast.author}</p>
           </div>
         </div>
       `).join('');
@@ -123,39 +125,56 @@
       document.getElementById('detailTitle').textContent = selectedPodcast.title;
       document.getElementById('detailAuthor').textContent = selectedPodcast.author;
       document.getElementById('detailDescription').textContent = selectedPodcast.description;
+      document.getElementById('detailImage').src = selectedPodcast.imageUrl || '';
 
       episodeList.innerHTML = '';
       podcastDetails.classList.remove('hidden');
       emptyState.classList.add('hidden');
+
       renderPodcasts();
     }
 
-    function addPodcastToDB(podcast) {
-      const newRef = db.ref('podcasts').push();
-      newRef.set(podcast);
-    }
-
-    function deletePodcast(id) {
-      db.ref('podcasts/' + id).remove();
-      if (selectedPodcast?.id === id) {
-        selectedPodcast = null;
-        podcastDetails.classList.add('hidden');
-        emptyState.classList.remove('hidden');
-      }
-    }
-
-    document.getElementById('btnAddPodcast').onclick = () => addForm.classList.toggle('hidden');
-    document.getElementById('btnSavePodcast').onclick = () => {
+    // Aggiungi podcast con immagine
+    document.getElementById('btnSavePodcast').onclick = async () => {
       const title = document.getElementById('inputTitle').value;
       const author = document.getElementById('inputAuthor').value;
       const description = document.getElementById('inputDescription').value;
-      if (title && author) {
-        addPodcastToDB({ title, author, description, episodes: [] });
-        document.getElementById('inputTitle').value = '';
-        document.getElementById('inputAuthor').value = '';
-        document.getElementById('inputDescription').value = '';
-        addForm.classList.add('hidden');
+      const file = document.getElementById('inputImage').files[0];
+
+      if (!title || !author) return;
+
+      let imageUrl = '';
+      if (file) {
+        const storageRef = storage.ref('podcastImages/' + Date.now() + '_' + file.name);
+        await storageRef.put(file);
+        imageUrl = await storageRef.getDownloadURL();
       }
+
+      const newRef = db.ref('podcasts').push();
+      newRef.set({ title, author, description, imageUrl, episodes: [] });
+
+      document.getElementById('inputTitle').value = '';
+      document.getElementById('inputAuthor').value = '';
+      document.getElementById('inputDescription').value = '';
+      document.getElementById('inputImage').value = '';
+      addForm.classList.add('hidden');
+    };
+
+    // Aggiungi episodio con file audio
+    document.getElementById('btnSaveEpisode').onclick = async () => {
+      const title = document.getElementById('inputEpisodeTitle').value;
+      const file = document.getElementById('inputEpisodeFile').files[0];
+      if (!title || !file || !selectedPodcast) return;
+
+      const storageRef = storage.ref('podcastEpisodes/' + Date.now() + '_' + file.name);
+      await storageRef.put(file);
+      const audioUrl = await storageRef.getDownloadURL();
+
+      const episodeRef = db.ref(`podcasts/${selectedPodcast.id}/episodes`).push();
+      episodeRef.set({ title, url: audioUrl });
+
+      document.getElementById('inputEpisodeTitle').value = '';
+      document.getElementById('inputEpisodeFile').value = '';
     };
 
     fetchPodcasts();
