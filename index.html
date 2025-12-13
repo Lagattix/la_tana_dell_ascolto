@@ -1,1 +1,348 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Play, Pause, SkipBack, SkipForward, Plus, Trash2, Music } from 'lucide-react';
+
+// Firebase Realtime Database
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, set, push, remove, onValue } from "firebase/database";
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBr1VaUdcpi8_M6JOfPMjs8w1rpRYDzvnI",
+  authDomain: "la-tana-dell-ascolto.firebaseapp.com",
+  projectId: "la-tana-dell-ascolto",
+  storageBucket: "la-tana-dell-ascolto.firebasestorage.app",
+  messagingSenderId: "307935167022",
+  appId: "1:307935167022:web:9e5ed0d1bb17a5fcbad5bf"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+// Connetti Realtime Database
+const db = getDatabase(app);
+
+// Funzioni per leggere e scrivere
+const fetchPodcastsFromDB = (callback) => {
+  const podcastsRef = ref(db, 'podcasts');
+  onValue(podcastsRef, (snapshot) => {
+    const data = snapshot.val();
+    const podcasts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+    callback(podcasts);
+  });
+};
+
+const addPodcastToDB = async (podcast) => {
+  const podcastsRef = ref(db, 'podcasts');
+  const newPodcastRef = push(podcastsRef);
+  await set(newPodcastRef, podcast);
+  return newPodcastRef.key;
+};
+
+const deletePodcastFromDB = async (id) => {
+  const podcastRef = ref(db, `podcasts/${id}`);
+  await remove(podcastRef);
+};
+
+// -----------------------
+// Qui inizia il tuo PodcastApp originale
+// -----------------------
+
+export default function PodcastApp() {
+  const [podcasts, setPodcasts] = useState([
+    {
+      id: 1,
+      title: "Tech Talk Daily",
+      author: "Marco Rossi",
+      description: "Le ultime novità dal mondo della tecnologia",
+      episodes: [
+        { id: 1, title: "AI e futuro del lavoro", duration: "45:20", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+        { id: 2, title: "Blockchain spiegata semplice", duration: "38:15", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" }
+      ]
+    },
+    {
+      id: 2,
+      title: "Storie Italiane",
+      author: "Laura Bianchi",
+      description: "Racconti e leggende della nostra storia",
+      episodes: [
+        { id: 3, title: "I Medici di Firenze", duration: "52:30", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
+      ]
+    }
+  ]);
+
+  const [selectedPodcast, setSelectedPodcast] = useState(null);
+  const [currentEpisode, setCurrentEpisode] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newPodcast, setNewPodcast] = useState({ title: '', author: '', description: '' });
+  
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateDuration = () => setDuration(audio.duration);
+    const handleEnded = () => setIsPlaying(false);
+
+    audio.addEventListener('timeupdate', updateTime);
+    audio.addEventListener('loadedmetadata', updateDuration);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateTime);
+      audio.removeEventListener('loadedmetadata', updateDuration);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, []);
+
+  const playEpisode = (episode) => {
+    if (currentEpisode?.id === episode.id && isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      if (currentEpisode?.id !== episode.id) {
+        setCurrentEpisode(episode);
+        audioRef.current.src = episode.url;
+      }
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const skipTime = (seconds) => {
+    audioRef.current.currentTime += seconds;
+  };
+
+  const handleSeek = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = x / rect.width;
+    audioRef.current.currentTime = percentage * duration;
+  };
+
+  const formatTime = (seconds) => {
+    if (isNaN(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const addPodcast = () => {
+    if (newPodcast.title && newPodcast.author) {
+      setPodcasts([...podcasts, {
+        id: Date.now(),
+        ...newPodcast,
+        episodes: []
+      }]);
+      setNewPodcast({ title: '', author: '', description: '' });
+      setShowAddForm(false);
+    }
+  };
+
+  const deletePodcast = (id) => {
+    setPodcasts(podcasts.filter(p => p.id !== id));
+    if (selectedPodcast?.id === id) {
+      setSelectedPodcast(null);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white p-6">
+      <div className="max-w-7xl mx-auto">
+        <header className="mb-8">
+          <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
+            <Music className="w-10 h-10" />
+            Podcast App
+          </h1>
+          <p className="text-purple-200">I tuoi podcast preferiti in un solo posto</p>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-24">
+          {/* Lista Podcast */}
+          <div className="lg:col-span-1 bg-white/10 backdrop-blur-lg rounded-2xl p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold">I Miei Podcast</h2>
+              <button
+                onClick={() => setShowAddForm(!showAddForm)}
+                className="p-2 bg-purple-500 hover:bg-purple-600 rounded-lg transition"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
+
+            {showAddForm && (
+              <div className="mb-4 p-4 bg-white/5 rounded-lg space-y-3">
+                <input
+                  type="text"
+                  placeholder="Titolo podcast"
+                  value={newPodcast.title}
+                  onChange={(e) => setNewPodcast({...newPodcast, title: e.target.value})}
+                  className="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50"
+                />
+                <input
+                  type="text"
+                  placeholder="Autore"
+                  value={newPodcast.author}
+                  onChange={(e) => setNewPodcast({...newPodcast, author: e.target.value})}
+                  className="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50"
+                />
+                <textarea
+                  placeholder="Descrizione"
+                  value={newPodcast.description}
+                  onChange={(e) => setNewPodcast({...newPodcast, description: e.target.value})}
+                  className="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50"
+                  rows="2"
+                />
+                <button
+                  onClick={addPodcast}
+                  className="w-full py-2 bg-green-500 hover:bg-green-600 rounded-lg transition font-medium"
+                >
+                  Aggiungi
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              {podcasts.map(podcast => (
+                <div
+                  key={podcast.id}
+                  onClick={() => setSelectedPodcast(podcast)}
+                  className={`p-4 rounded-lg cursor-pointer transition flex justify-between items-start ${
+                    selectedPodcast?.id === podcast.id
+                      ? 'bg-purple-500'
+                      : 'bg-white/5 hover:bg-white/10'
+                  }`}
+                >
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{podcast.title}</h3>
+                    <p className="text-sm text-purple-200">{podcast.author}</p>
+                    <p className="text-xs text-purple-300 mt-1">{podcast.episodes.length} episodi</p>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deletePodcast(podcast.id);
+                    }}
+                    className="p-2 hover:bg-red-500 rounded-lg transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dettagli e Episodi */}
+          <div className="lg:col-span-2 bg-white/10 backdrop-blur-lg rounded-2xl p-6">
+            {selectedPodcast ? (
+              <>
+                <div className="mb-6">
+                  <h2 className="text-3xl font-bold mb-2">{selectedPodcast.title}</h2>
+                  <p className="text-lg text-purple-200 mb-2">{selectedPodcast.author}</p>
+                  <p className="text-purple-300">{selectedPodcast.description}</p>
+                </div>
+
+                <h3 className="text-xl font-semibold mb-4">Episodi</h3>
+                <div className="space-y-3">
+                  {selectedPodcast.episodes.map(episode => (
+                    <div
+                      key={episode.id}
+                      className={`p-4 rounded-lg transition ${
+                        currentEpisode?.id === episode.id
+                          ? 'bg-purple-500'
+                          : 'bg-white/5 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <h4 className="font-semibold">{episode.title}</h4>
+                          <p className="text-sm text-purple-200">{episode.duration}</p>
+                        </div>
+                        <button
+                          onClick={() => playEpisode(episode)}
+                          className="p-3 bg-purple-600 hover:bg-purple-700 rounded-full transition"
+                        >
+                          {currentEpisode?.id === episode.id && isPlaying ? (
+                            <Pause className="w-5 h-5" />
+                          ) : (
+                            <Play className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="h-full flex items-center justify-center text-purple-300">
+                <p className="text-xl">Seleziona un podcast per vedere gli episodi</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Player Fisso */}
+        {currentEpisode && (
+          <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-purple-900 to-indigo-900 border-t border-white/20 p-4">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="flex-1">
+                  <h4 className="font-semibold">{currentEpisode.title}</h4>
+                  <p className="text-sm text-purple-200">{selectedPodcast?.title}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => skipTime(-10)}
+                    className="p-2 hover:bg-white/10 rounded-lg transition"
+                  >
+                    <SkipBack className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={togglePlay}
+                    className="p-3 bg-purple-500 hover:bg-purple-600 rounded-full transition"
+                  >
+                    {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+                  </button>
+                  <button
+                    onClick={() => skipTime(10)}
+                    className="p-2 hover:bg-white/10 rounded-lg transition"
+                  >
+                    <SkipForward className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="text-sm text-purple-200">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </div>
+              </div>
+              <div
+                onClick={handleSeek}
+                className="h-2 bg-white/20 rounded-full cursor-pointer"
+              >
+                <div
+                  className="h-full bg-purple-500 rounded-full transition-all"
+                  style={{ width: `${(currentTime / duration) * 100 || 0}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <audio ref={audioRef} />
+      </div>
+    </div>
+  );
+}
 
