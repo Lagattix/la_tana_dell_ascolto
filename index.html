@@ -1,204 +1,249 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Podcast App</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-  <style>
-    body { margin: 0; padding: 0; }
-    img.podcast-img { width: 50px; height: 50px; object-fit: cover; border-radius: 0.5rem; margin-right: 0.5rem; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podcast App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+    </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white">
-  <div class="p-6 pb-32">
-    <div class="max-w-7xl mx-auto">
-      <header class="mb-8">
-        <h1 class="text-4xl font-bold mb-2 flex items-center gap-3">🎙 Podcast App</h1>
-        <p class="text-purple-200">I tuoi podcast preferiti in un solo posto</p>
-      </header>
+    <div class="p-6 pb-32">
+        <div class="max-w-7xl mx-auto">
+            <header class="mb-8">
+                <h1 class="text-4xl font-bold mb-2 flex items-center gap-3">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                    </svg>
+                    Podcast App
+                </h1>
+                <p class="text-purple-200">I tuoi podcast preferiti in un solo posto</p>
+            </header>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Lista Podcast -->
-        <div class="lg:col-span-1 bg-white/10 backdrop-blur-lg rounded-2xl p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-semibold">I Miei Podcast</h2>
-            <button id="btnAddPodcast" class="p-2 bg-purple-500 hover:bg-purple-600 rounded-lg transition">➕</button>
-          </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Lista Podcast -->
+                <div class="lg:col-span-1 bg-white/10 backdrop-blur-lg rounded-2xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold">I Miei Podcast</h2>
+                        <button id="btnAddPodcast" class="p-2 bg-purple-500 hover:bg-purple-600 rounded-lg transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                        </button>
+                    </div>
 
-          <!-- Form Aggiungi Podcast -->
-          <div id="addForm" class="hidden mb-4 p-4 bg-white/5 rounded-lg space-y-3">
-            <input type="text" id="inputTitle" placeholder="Titolo podcast" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50">
-            <input type="text" id="inputAuthor" placeholder="Autore" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50">
-            <textarea id="inputDescription" placeholder="Descrizione" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50" rows="2"></textarea>
-            <input type="file" id="inputImage" accept="image/*" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50">
-            <button id="btnSavePodcast" class="w-full py-2 bg-green-500 hover:bg-green-600 rounded-lg transition font-medium">Aggiungi Podcast</button>
-          </div>
+                    <!-- Form Aggiungi Podcast -->
+                    <div id="addForm" class="hidden mb-4 p-4 bg-white/5 rounded-lg space-y-3">
+                        <input type="text" id="inputTitle" placeholder="Titolo podcast" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50">
+                        <input type="text" id="inputAuthor" placeholder="Autore" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50">
+                        <textarea id="inputDescription" placeholder="Descrizione" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50" rows="2"></textarea>
+                        <input type="text" id="inputAudioURL" placeholder="URL Audio" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50">
+                        <button id="btnSavePodcast" class="w-full py-2 bg-green-500 hover:bg-green-600 rounded-lg transition font-medium">Aggiungi</button>
+                    </div>
 
-          <div id="podcastList" class="space-y-2"></div>
-        </div>
+                    <div id="podcastList" class="space-y-2"></div>
+                </div>
 
-        <!-- Dettagli e Episodi -->
-        <div class="lg:col-span-2 bg-white/10 backdrop-blur-lg rounded-2xl p-6">
-          <div id="podcastDetails" class="hidden">
-            <div class="mb-6 flex items-center gap-4">
-              <img id="detailImage" class="w-24 h-24 rounded-lg object-cover" src="" alt="">
-              <div>
-                <h2 id="detailTitle" class="text-3xl font-bold mb-2"></h2>
-                <p id="detailAuthor" class="text-lg text-purple-200 mb-2"></p>
-                <p id="detailDescription" class="text-purple-300"></p>
-              </div>
+                <!-- Dettagli e Episodi -->
+                <div class="lg:col-span-2 bg-white/10 backdrop-blur-lg rounded-2xl p-6">
+                    <div id="podcastDetails" class="hidden">
+                        <div class="mb-6">
+                            <h2 id="detailTitle" class="text-3xl font-bold mb-2"></h2>
+                            <p id="detailAuthor" class="text-lg text-purple-200 mb-2"></p>
+                            <p id="detailDescription" class="text-purple-300"></p>
+                        </div>
+
+                        <h3 class="text-xl font-semibold mb-4">Episodi</h3>
+                        <div id="episodeList" class="space-y-3"></div>
+                    </div>
+
+                    <div id="emptyState" class="h-full flex items-center justify-center text-purple-300">
+                        <p class="text-xl">Seleziona un podcast per vedere gli episodi</p>
+                    </div>
+                </div>
             </div>
-            <h3 class="text-xl font-semibold mb-4">Episodi</h3>
-            <div id="episodeList" class="space-y-3"></div>
-
-            <!-- Form Aggiungi Episodio -->
-            <div class="mt-4 p-4 bg-white/10 rounded-lg">
-              <h4 class="font-semibold mb-2">Aggiungi Episodio</h4>
-              <input type="text" id="inputEpisodeTitle" placeholder="Titolo episodio" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50 mb-2">
-              <input type="file" id="inputEpisodeFile" accept="audio/*" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50 mb-2">
-              <button id="btnSaveEpisode" class="w-full py-2 bg-green-500 hover:bg-green-600 rounded-lg transition font-medium">Aggiungi Episodio</button>
-            </div>
-          </div>
-          <div id="emptyState" class="h-full flex items-center justify-center text-purple-300">
-            <p class="text-xl">Seleziona un podcast per vedere gli episodi</p>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <audio id="audioPlayer" controls class="fixed bottom-4 left-4 w-1/3"></audio>
-
-  <script>
-    // FIREBASE
-    const firebaseConfig = {
-      apiKey: "AIzaSyBr1VaUdcpi8_M6JOfPMjs8w1rpRYDzvnI",
-      authDomain: "la-tana-dell-ascolto.firebaseapp.com",
-      databaseURL: "https://la-tana-dell-ascolto-default-rtdb.firebaseio.com",
-      projectId: "la-tana-dell-ascolto",
-      storageBucket: "la-tana-dell-ascolto.appspot.com",
-      messagingSenderId: "307935167022",
-      appId: "1:307935167022:web:9e5ed0d1bb17a5fcbad5bf"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const storage = firebase.storage();
-
-    let podcasts = [];
-    let selectedPodcast = null;
-
-    const podcastList = document.getElementById('podcastList');
-    const episodeList = document.getElementById('episodeList');
-    const podcastDetails = document.getElementById('podcastDetails');
-    const emptyState = document.getElementById('emptyState');
-    const addForm = document.getElementById('addForm');
-    const btnAddPodcast = document.getElementById('btnAddPodcast');
-
-    // Toggle form
-    btnAddPodcast.addEventListener('click', () => {
-      addForm.classList.toggle('hidden');
-    });
-
-    // Carica podcast da Firebase
-    function fetchPodcasts() {
-      db.ref('podcasts').on('value', snapshot => {
-        const data = snapshot.val();
-        podcasts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
-        renderPodcasts();
-      });
-    }
-
-    function renderPodcasts() {
-      podcastList.innerHTML = podcasts.map(p => `
-        <div onclick="selectPodcast('${p.id}')" class="p-4 rounded-lg cursor-pointer transition ${selectedPodcast?.id === p.id ? 'bg-purple-500' : 'bg-white/5 hover:bg-white/10'} flex items-center">
-          ${p.imageUrl ? `<img src="${p.imageUrl}" class="podcast-img" />` : ''}
-          <div>
-            <h3 class="font-semibold">${p.title}</h3>
-            <p class="text-sm text-purple-200">${p.author}</p>
-          </div>
+    <!-- Player Fisso -->
+    <div id="player" class="hidden fixed bottom-0 left-0 right-0 bg-gradient-to-r from-purple-900 to-indigo-900 border-t border-white/20 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center gap-4 mb-3">
+                <div class="flex-1">
+                    <h4 id="playerEpisodeTitle" class="font-semibold"></h4>
+                    <p id="playerPodcastTitle" class="text-sm text-purple-200"></p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btnSkipBack" class="p-2 hover:bg-white/10 rounded-lg transition">⏪</button>
+                    <button id="btnPlayPause" class="p-3 bg-purple-500 hover:bg-purple-600 rounded-full transition">▶️</button>
+                    <button id="btnSkipForward" class="p-2 hover:bg-white/10 rounded-lg transition">⏩</button>
+                </div>
+                <div id="timeDisplay" class="text-sm text-purple-200">0:00 / 0:00</div>
+            </div>
+            <div id="progressBar" class="h-2 bg-white/20 rounded-full cursor-pointer">
+                <div id="progressFill" class="h-full bg-purple-500 rounded-full transition-all" style="width: 0%"></div>
+            </div>
         </div>
-      `).join('');
-    }
+    </div>
 
-    window.selectPodcast = function(id) {
-      selectedPodcast = podcasts.find(p => p.id === id);
-      if (!selectedPodcast) return;
-      document.getElementById('detailTitle').textContent = selectedPodcast.title;
-      document.getElementById('detailAuthor').textContent = selectedPodcast.author;
-      document.getElementById('detailDescription').textContent = selectedPodcast.description;
-      document.getElementById('detailImage').src = selectedPodcast.imageUrl || '';
+    <audio id="audioPlayer"></audio>
 
-      episodeList.innerHTML = '';
-      if (selectedPodcast.episodes) {
-        Object.values(selectedPodcast.episodes).forEach(ep => {
-          const div = document.createElement('div');
-          div.className = "p-4 rounded-lg bg-white/5 hover:bg-white/10 flex justify-between items-center";
-          div.innerHTML = `<span>${ep.title}</span><button onclick="playAudio('${ep.url}')">▶️</button>`;
-          episodeList.appendChild(div);
+    <script>
+        // --- Dati iniziali ---
+        let podcasts = [];
+        let selectedPodcast = null;
+        let currentEpisode = null;
+        let isPlaying = false;
+        let decodedAudioCache = {}; // cache degli audio decodificati
+
+        // Elementi DOM
+        const audio = document.getElementById('audioPlayer');
+        const podcastList = document.getElementById('podcastList');
+        const episodeList = document.getElementById('episodeList');
+        const player = document.getElementById('player');
+        const addForm = document.getElementById('addForm');
+        const podcastDetails = document.getElementById('podcastDetails');
+        const emptyState = document.getElementById('emptyState');
+
+        // --- Funzioni ---
+        function renderPodcasts() {
+            podcastList.innerHTML = podcasts.map((p, idx) => `
+                <div onclick="selectPodcast(${idx})" class="p-4 rounded-lg cursor-pointer transition ${selectedPodcast === p ? 'bg-purple-500' : 'bg-white/5 hover:bg-white/10'}">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="font-semibold">${p.title}</h3>
+                            <p class="text-sm text-purple-200">${p.author}</p>
+                            <p class="text-xs text-purple-300 mt-1">${p.episodes.length} episodi</p>
+                        </div>
+                        <button onclick="event.stopPropagation(); deletePodcast(${idx})" class="p-2 hover:bg-red-500 rounded-lg transition">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectPodcast(idx) {
+            selectedPodcast = podcasts[idx];
+
+            document.getElementById('detailTitle').textContent = selectedPodcast.title;
+            document.getElementById('detailAuthor').textContent = selectedPodcast.author;
+            document.getElementById('detailDescription').textContent = selectedPodcast.description;
+
+            // Render episodi
+            episodeList.innerHTML = selectedPodcast.episodes.map((ep, epiIdx) => `
+                <div class="p-4 rounded-lg transition ${currentEpisode === ep ? 'bg-purple-500' : 'bg-white/5 hover:bg-white/10'}">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1">
+                            <h4 class="font-semibold">${ep.title}</h4>
+                            <p class="text-sm text-purple-200">${ep.duration}</p>
+                        </div>
+                        <button onclick="prepareEpisode(${idx}, ${epiIdx})" class="p-3 bg-purple-600 hover:bg-purple-700 rounded-full transition">▶️</button>
+                    </div>
+                </div>
+            `).join('');
+
+            podcastDetails.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            renderPodcasts();
+        }
+
+        function prepareEpisode(podcastIdx, episodeIdx) {
+            const ep = podcasts[podcastIdx].episodes[episodeIdx];
+            // se è già decodificato, basta riprodurre
+            if (decodedAudioCache[ep.url]) {
+                playEpisode(ep);
+                return;
+            }
+
+            // carica e decodifica in background
+            fetch(ep.url)
+                .then(res => res.arrayBuffer())
+                .then(data => {
+                    const context = new (window.AudioContext || window.webkitAudioContext)();
+                    return context.decodeAudioData(data);
+                })
+                .then(decoded => {
+                    decodedAudioCache[ep.url] = decoded; // salva in cache
+                    playEpisode(ep);
+                })
+                .catch(err => alert('Errore nel caricamento audio: ' + err));
+        }
+
+        function playEpisode(ep) {
+            if (currentEpisode === ep && isPlaying) {
+                audio.pause();
+                isPlaying = false;
+            } else {
+                currentEpisode = ep;
+                audio.src = ep.url; // il browser riproduce normalmente
+                document.getElementById('playerEpisodeTitle').textContent = ep.title;
+                document.getElementById('playerPodcastTitle').textContent = selectedPodcast.title;
+                player.classList.remove('hidden');
+                audio.play();
+                isPlaying = true;
+            }
+        }
+
+        function togglePlay() {
+            if (isPlaying) audio.pause();
+            else audio.play();
+            isPlaying = !isPlaying;
+        }
+
+        function deletePodcast(idx) {
+            if (selectedPodcast === podcasts[idx]) {
+                selectedPodcast = null;
+                podcastDetails.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            }
+            podcasts.splice(idx, 1);
+            renderPodcasts();
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2,'0')}`;
+        }
+
+        // --- Eventi ---
+        audio.addEventListener('timeupdate', () => {
+            const current = audio.currentTime;
+            const duration = audio.duration;
+            document.getElementById('timeDisplay').textContent = `${formatTime(current)} / ${formatTime(duration)}`;
+            document.getElementById('progressFill').style.width = `${(current / duration) * 100 || 0}%`;
         });
-      }
 
-      podcastDetails.classList.remove('hidden');
-      emptyState.classList.add('hidden');
-      renderPodcasts();
-    };
+        document.getElementById('btnPlayPause').onclick = togglePlay;
+        document.getElementById('btnSkipBack').onclick = () => audio.currentTime -= 10;
+        document.getElementById('btnSkipForward').onclick = () => audio.currentTime += 10;
+        document.getElementById('progressBar').onclick = (e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            audio.currentTime = (x / rect.width) * audio.duration;
+        };
 
-    window.playAudio = function(url) {
-      const audio = document.getElementById('audioPlayer');
-      audio.src = url;
-      audio.play();
-    };
+        document.getElementById('btnAddPodcast').onclick = () => addForm.classList.toggle('hidden');
+        document.getElementById('btnSavePodcast').onclick = () => {
+            const title = document.getElementById('inputTitle').value;
+            const author = document.getElementById('inputAuthor').value;
+            const description = document.getElementById('inputDescription').value;
+            const url = document.getElementById('inputAudioURL').value;
 
-    // Aggiungi podcast
-    document.getElementById('btnSavePodcast').onclick = async () => {
-      const title = document.getElementById('inputTitle').value;
-      const author = document.getElementById('inputAuthor').value;
-      const description = document.getElementById('inputDescription').value;
-      const file = document.getElementById('inputImage').files[0];
+            if (title && author && url) {
+                podcasts.push({ title, author, description, episodes: [{ title, duration: '0:00', url }] });
+                document.getElementById('inputTitle').value = '';
+                document.getElementById('inputAuthor').value = '';
+                document.getElementById('inputDescription').value = '';
+                document.getElementById('inputAudioURL').value = '';
+                addForm.classList.add('hidden');
+                renderPodcasts();
+            }
+        };
 
-      if (!title || !author) return;
-
-      let imageUrl = '';
-      if (file) {
-        const storageRef = storage.ref('podcastImages/' + Date.now() + '_' + file.name);
-        await storageRef.put(file);
-        imageUrl = await storageRef.getDownloadURL();
-      }
-
-      const newRef = db.ref('podcasts').push();
-      newRef.set({ title, author, description, imageUrl, episodes: {} });
-
-      document.getElementById('inputTitle').value = '';
-      document.getElementById('inputAuthor').value = '';
-      document.getElementById('inputDescription').value = '';
-      document.getElementById('inputImage').value = '';
-      addForm.classList.add('hidden');
-    };
-
-    // Aggiungi episodio
-    document.getElementById('btnSaveEpisode').onclick = async () => {
-      if (!selectedPodcast) return;
-      const title = document.getElementById('inputEpisodeTitle').value;
-      const file = document.getElementById('inputEpisodeFile').files[0];
-      if (!title || !file) return;
-
-      const storageRef = storage.ref('podcastEpisodes/' + Date.now() + '_' + file.name);
-      await storageRef.put(file);
-      const audioUrl = await storageRef.getDownloadURL();
-
-      db.ref(`podcasts/${selectedPodcast.id}/episodes`).push({ title, url: audioUrl });
-
-      document.getElementById('inputEpisodeTitle').value = '';
-      document.getElementById('inputEpisodeFile').value = '';
-
-      selectPodcast(selectedPodcast.id);
-    };
-
-    fetchPodcasts();
-  </script>
+        renderPodcasts();
+    </script>
 </body>
 </html>
