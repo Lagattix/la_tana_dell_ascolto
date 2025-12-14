@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profilo - La tana dell'ascolto</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: white;
+    margin: 0;
+    padding-bottom: 70px; /* spazio per la navbar */
+    transition: background 0.3s, color 0.3s;
+  }
+  .light {
+    background: #f2f2f2;
+    color: #111;
+  }
+  .container {
+    padding: 20px;
+    max-width: 400px;
+    margin: auto;
+  }
+  input, button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+  }
+  .navbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #1e1e1e;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    border-top: 1px solid #333;
+  }
+  .nav-item {
+    color: white;
+    text-align: center;
+    font-size: 14px;
+  }
+  .nav-item svg {
+    display: block;
+    margin: auto;
+    margin-bottom: 4px;
+  }
+  .nav-item.active {
+    color: #7c3aed;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Profilo</h1>
+
+  <p><strong>ID utente:</strong> <span id="userId"></span></p>
+
+  <label for="username">Nome utente:</label>
+  <input type="text" id="username" placeholder="Inserisci nome">
+
+  <button id="saveName">Salva nome</button>
+
+  <hr>
+
+  <h2>Modalità</h2>
+  <button id="toggleTheme">Switch Light/Dark</button>
+</div>
+
+<!-- Navbar in basso -->
+<div class="navbar">
+  <div class="nav-item" onclick="goHome()">
+    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-6H9v6a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9z"/>
+    </svg>
+    Home
+  </div>
+  <div class="nav-item active">
+    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A9 9 0 1 1 18.88 17.804M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/>
+    </svg>
+    Profilo
+  </div>
+</div>
+
+<script>
+/* ID utente */
+let userId = localStorage.getItem("userId");
+if (!userId) {
+  userId = crypto.randomUUID();
+  localStorage.setItem("userId", userId);
+}
+document.getElementById("userId").textContent = userId;
+
+/* Nome utente */
+const usernameInput = document.getElementById("username");
+const savedName = localStorage.getItem("username");
+if (savedName) usernameInput.value = savedName;
+
+document.getElementById("saveName").onclick = () => {
+  const name = usernameInput.value.trim();
+  if (name) {
+    localStorage.setItem("username", name);
+    alert("Nome utente salvato!");
+  }
+};
+
+/* Light/Dark */
+document.getElementById("toggleTheme").onclick = () => {
+  document.body.classList.toggle("light");
+};
+
+/* Torna home */
+function goHome() {
+  window.location.href = "index.html";
+}
+</script>
+</body>
+</html>
