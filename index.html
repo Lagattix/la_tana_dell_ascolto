@@ -1,214 +1,147 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La tana dell'ascolto</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { margin: 0; padding: 0; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La tana dell'ascolto</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white">
-    <div class="p-6 pb-32">
-        <div class="max-w-7xl mx-auto">
-            <header class="mb-8">
-                <h1 class="text-4xl font-bold mb-2 flex items-center gap-3">
-                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                    </svg>
-                    La tana dell'ascolto
-                </h1>
-                <p class="text-purple-200">I tuoi podcast preferiti in un solo posto</p>
-            </header>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Lista Podcast -->
-                <div class="lg:col-span-1 bg-white/10 backdrop-blur-lg rounded-2xl p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-semibold">I Miei Podcast</h2>
-                        <button id="btnAddPodcast" class="p-2 bg-purple-500 hover:bg-purple-600 rounded-lg transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                        </button>
-                    </div>
+<div class="p-6 pb-32 max-w-7xl mx-auto">
 
-                    <!-- Form Aggiungi Podcast -->
-                    <div id="addForm" class="hidden mb-4 p-4 bg-white/5 rounded-lg space-y-3">
-                        <input type="text" id="inputTitle" placeholder="Titolo podcast" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50">
-                        <input type="text" id="inputAuthor" placeholder="Autore" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50">
-                        <textarea id="inputDescription" placeholder="Descrizione" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50" rows="2"></textarea>
-                        <button id="btnSavePodcast" class="w-full py-2 bg-green-500 hover:bg-green-600 rounded-lg transition font-medium">
-                            Aggiungi
-                        </button>
-                    </div>
+<header class="mb-8">
+<h1 class="text-4xl font-bold flex items-center gap-3">
+🎧 La tana dell'ascolto
+</h1>
+<p class="text-purple-200">Crea podcast. Poi racconta storie.</p>
+</header>
 
-                    <div id="podcastList" class="space-y-2"></div>
-                </div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                <!-- Dettagli e Episodi -->
-                <div class="lg:col-span-2 bg-white/10 backdrop-blur-lg rounded-2xl p-6">
-                    <div id="podcastDetails" class="hidden">
-                        <div class="mb-6">
-                            <h2 id="detailTitle" class="text-3xl font-bold mb-2"></h2>
-                            <p id="detailAuthor" class="text-lg text-purple-200 mb-2"></p>
-                            <p id="detailDescription" class="text-purple-300"></p>
-                        </div>
+<!-- LISTA PODCAST -->
+<div class="bg-white/10 rounded-2xl p-6">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-2xl font-semibold">Podcast</h2>
+<button id="btnAddPodcast" class="bg-purple-500 px-3 py-1 rounded">+</button>
+</div>
 
-                        <h3 class="text-xl font-semibold mb-4">Episodi</h3>
-                        <div id="episodeList" class="space-y-3"></div>
-                    </div>
+<!-- FORM PODCAST -->
+<div id="addForm" class="hidden space-y-2 mb-4">
+<input id="imgInput" type="file" accept="image/*" class="w-full">
+<input id="titleInput" placeholder="Titolo" class="w-full p-2 bg-white/10 rounded">
+<input id="authorInput" placeholder="Autore" class="w-full p-2 bg-white/10 rounded">
+<textarea id="descInput" placeholder="Descrizione" class="w-full p-2 bg-white/10 rounded"></textarea>
+<button id="savePodcast" class="w-full bg-green-500 py-2 rounded">Crea podcast</button>
+</div>
 
-                    <div id="emptyState" class="h-full flex items-center justify-center text-purple-300">
-                        <p class="text-xl">Seleziona un podcast per vedere gli episodi</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div id="podcastList" class="space-y-2"></div>
+</div>
+
+<!-- DETTAGLI -->
+<div class="lg:col-span-2 bg-white/10 rounded-2xl p-6">
+<div id="empty" class="text-center text-purple-300">Seleziona un podcast</div>
+
+<div id="details" class="hidden space-y-4">
+<img id="detailImg" class="w-40 h-40 object-cover rounded-xl">
+<h2 id="detailTitle" class="text-3xl font-bold"></h2>
+<p id="detailAuthor" class="text-purple-200"></p>
+<p id="detailDesc" class="text-purple-300"></p>
+
+<button id="addEpisodeBtn" class="hidden bg-purple-500 px-4 py-2 rounded">
+➕ Aggiungi episodio
+</button>
+
+<div id="episodes" class="space-y-2"></div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- PLAYER -->
+<audio id="audio"></audio>
+
+<script>
+/* USER */
+let userId = localStorage.getItem("userId");
+if (!userId) {
+  userId = crypto.randomUUID();
+  localStorage.setItem("userId", userId);
+}
+
+/* DATA */
+let podcasts = [];
+let selected = null;
+
+/* DOM */
+const podcastList = document.getElementById("podcastList");
+const addForm = document.getElementById("addForm");
+const details = document.getElementById("details");
+const empty = document.getElementById("empty");
+const addEpisodeBtn = document.getElementById("addEpisodeBtn");
+
+/* EVENTS */
+document.getElementById("btnAddPodcast").onclick = () => {
+  addForm.classList.toggle("hidden");
+};
+
+document.getElementById("savePodcast").onclick = () => {
+  const imgFile = document.getElementById("imgInput").files[0];
+  if (!imgFile) return alert("Serve un'immagine");
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    podcasts.push({
+      id: Date.now(),
+      title: titleInput.value,
+      author: authorInput.value,
+      description: descInput.value,
+      image: reader.result,
+      creatorId: userId,
+      episodes: []
+    });
+    addForm.classList.add("hidden");
+    render();
+  };
+  reader.readAsDataURL(imgFile);
+};
+
+/* RENDER */
+function render() {
+  podcastList.innerHTML = podcasts.map(p => `
+    <div onclick="openPodcast(${p.id})"
+      class="p-3 bg-white/5 rounded cursor-pointer hover:bg-white/10">
+      <h3 class="font-semibold">${p.title}</h3>
+      <p class="text-sm text-purple-200">${p.author}</p>
     </div>
+  `).join("");
+}
 
-    <!-- Player Fisso -->
-    <div id="player" class="hidden fixed bottom-0 left-0 right-0 bg-gradient-to-r from-purple-900 to-indigo-900 border-t border-white/20 p-4">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex items-center gap-4 mb-3">
-                <div class="flex-1">
-                    <h4 id="playerEpisodeTitle" class="font-semibold"></h4>
-                    <p id="playerPodcastTitle" class="text-sm text-purple-200"></p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button id="btnSkipBack" class="p-2 hover:bg-white/10 rounded-lg transition">⏪</button>
-                    <button id="btnPlayPause" class="p-3 bg-purple-500 hover:bg-purple-600 rounded-full transition">▶️</button>
-                    <button id="btnSkipForward" class="p-2 hover:bg-white/10 rounded-lg transition">⏩</button>
-                </div>
-                <div id="timeDisplay" class="text-sm text-purple-200">0:00 / 0:00</div>
-            </div>
-            <div id="progressBar" class="h-2 bg-white/20 rounded-full cursor-pointer">
-                <div id="progressFill" class="h-full bg-purple-500 rounded-full transition-all" style="width: 0%"></div>
-            </div>
-        </div>
-    </div>
+window.openPodcast = (id) => {
+  selected = podcasts.find(p => p.id === id);
+  empty.classList.add("hidden");
+  details.classList.remove("hidden");
 
-    <audio id="audioPlayer"></audio>
+  detailImg.src = selected.image;
+  detailTitle.textContent = selected.title;
+  detailAuthor.textContent = selected.author;
+  detailDesc.textContent = selected.description;
 
-    <script>
-        let podcasts = [
-            { id: 1, title: "Tech Talk Daily", author: "Marco Rossi", description: "Le ultime novità dal mondo della tecnologia", episodes: [{ id: 1, title: "AI e futuro del lavoro", duration: "45:20", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" }, { id: 2, title: "Blockchain spiegata semplice", duration: "38:15", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" }] },
-            { id: 2, title: "Storie Italiane", author: "Laura Bianchi", description: "Racconti e leggende della nostra storia", episodes: [{ id: 3, title: "I Medici di Firenze", duration: "52:30", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }] }
-        ];
+  episodes.innerHTML = selected.episodes.length
+    ? selected.episodes.map(e => `<div class="bg-white/5 p-2 rounded">${e.title}</div>`).join("")
+    : `<p class="text-purple-300">Nessun episodio</p>`;
 
-        let selectedPodcast = null;
-        let currentEpisode = null;
-        let isPlaying = false;
+  if (selected.creatorId === userId) {
+    addEpisodeBtn.classList.remove("hidden");
+  } else {
+    addEpisodeBtn.classList.add("hidden");
+  }
+};
 
-        const audio = document.getElementById('audioPlayer');
-        const podcastList = document.getElementById('podcastList');
-        const episodeList = document.getElementById('episodeList');
-        const player = document.getElementById('player');
-        const addForm = document.getElementById('addForm');
-        const podcastDetails = document.getElementById('podcastDetails');
-        const emptyState = document.getElementById('emptyState');
+render();
+</script>
 
-        function renderPodcasts() {
-            podcastList.innerHTML = podcasts.map((podcast, index) => `
-                <div onclick="selectPodcast(${index})" class="p-4 rounded-lg cursor-pointer transition ${selectedPodcast === podcasts[index] ? 'bg-purple-500' : 'bg-white/5 hover:bg-white/10'}">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <h3 class="font-semibold">${podcast.title}</h3>
-                            <p class="text-sm text-purple-200">${podcast.author}</p>
-                            <p class="text-xs text-purple-300 mt-1">${podcast.episodes.length} episodi</p>
-                        </div>
-                        <button onclick="event.stopPropagation(); deletePodcast(${index})" class="p-2 hover:bg-red-500 rounded-lg transition">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function selectPodcast(index) {
-            selectedPodcast = podcasts[index];
-            if (!selectedPodcast) return;
-
-            document.getElementById('detailTitle').textContent = selectedPodcast.title;
-            document.getElementById('detailAuthor').textContent = selectedPodcast.author;
-            document.getElementById('detailDescription').textContent = selectedPodcast.description;
-
-            episodeList.innerHTML = selectedPodcast.episodes.map(ep => `
-                <div class="p-4 rounded-lg transition ${currentEpisode === ep ? 'bg-purple-500' : 'bg-white/5 hover:bg-white/10'}">
-                    <div class="flex justify-between items-center">
-                        <div class="flex-1">
-                            <h4 class="font-semibold">${ep.title}</h4>
-                            <p class="text-sm text-purple-200">${ep.duration}</p>
-                        </div>
-                        <button onclick='playEpisode(${JSON.stringify(ep).replace(/'/g,"&apos;")})' class="p-3 bg-purple-600 hover:bg-purple-700 rounded-full transition">
-                            ${currentEpisode === ep && isPlaying ? '⏸️' : '▶️'}
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-
-            podcastDetails.classList.remove('hidden');
-            emptyState.classList.add('hidden');
-            renderPodcasts();
-        }
-
-        function playEpisode(ep) {
-            if (currentEpisode === ep && isPlaying) {
-                audio.pause();
-                isPlaying = false;
-            } else {
-                if (currentEpisode !== ep) {
-                    currentEpisode = ep;
-                    audio.src = ep.url;
-                    document.getElementById('playerEpisodeTitle').textContent = ep.title;
-                    document.getElementById('playerPodcastTitle').textContent = selectedPodcast.title;
-                    player.classList.remove('hidden');
-                }
-                audio.play();
-                isPlaying = true;
-            }
-        }
-
-        document.getElementById('btnAddPodcast').onclick = () => addForm.classList.toggle('hidden');
-        document.getElementById('btnSavePodcast').onclick = () => {
-            const title = document.getElementById('inputTitle').value;
-            const author = document.getElementById('inputAuthor').value;
-            const description = document.getElementById('inputDescription').value;
-            if (title && author) {
-                podcasts.push({ id: Date.now(), title, author, description, episodes: [] });
-                document.getElementById('inputTitle').value = '';
-                document.getElementById('inputAuthor').value = '';
-                document.getElementById('inputDescription').value = '';
-                addForm.classList.add('hidden');
-                renderPodcasts();
-            }
-        };
-
-        function deletePodcast(index) {
-            const isSelected = selectedPodcast === podcasts[index];
-            podcasts.splice(index, 1);
-            if (isSelected) {
-                selectedPodcast = null;
-                podcastDetails.classList.add('hidden');
-                emptyState.classList.remove('hidden');
-            }
-            renderPodcasts();
-        }
-
-        audio.addEventListener('timeupdate', () => {
-            const current = audio.currentTime;
-            const duration = audio.duration;
-            document.getElementById('timeDisplay').textContent = `${Math.floor(current/60)}:${Math.floor(current%60).toString().padStart(2,'0')} / ${Math.floor(duration/60)}:${Math.floor(duration%60).toString().padStart(2,'0')}`;
-            document.getElementById('progressFill').style.width = `${(current/duration)*100 || 0}%`;
-        });
-
-        audio.addEventListener('ended', () => { isPlaying = false; });
-
-        document.getElementById('btnPlayPause').onclick = () => { isPlaying ? audio.pause() : audio.play(); isPlaying = !isPlaying; };
-        document.getElementById('btnSkipBack').onclick = () => audio.currentTime -= 10;
-        document.getElementById('btnSkipForward').onclick = () => audio.currentTime += 10;
-        document.getElementById('progressBar').onclick = (e) => { const rect = e.currentTarget.getBoundingClientRect(); const x = e.clientX - rect.left; audio.currentTime = (x / rect.width) * audio.duration; };
-
-        renderPodcasts();
-    </script>
 </body>
 </html>
