@@ -39,7 +39,6 @@
                         <input type="text" id="inputTitle" placeholder="Titolo podcast" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50">
                         <input type="text" id="inputAuthor" placeholder="Autore" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50">
                         <textarea id="inputDescription" placeholder="Descrizione" class="w-full p-2 bg-white/10 rounded border border-white/20 text-white placeholder-white/50" rows="2"></textarea>
-                        <input type="file" id="inputAudio" accept="audio/*" class="w-full text-sm text-white/70"/>
                         <button id="btnSavePodcast" class="w-full py-2 bg-green-500 hover:bg-green-600 rounded-lg transition font-medium">
                             Aggiungi
                         </button>
@@ -79,7 +78,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="btnSkipBack" class="p-2 hover:bg-white/10 rounded-lg transition">⏪</button>
-                    <button id="btnPlayPause" class="p-3 bg-purple-500 hover:bg-purple-600 rounded-full transition">⏯</button>
+                    <button id="btnPlayPause" class="p-3 bg-purple-500 hover:bg-purple-600 rounded-full transition">▶️</button>
                     <button id="btnSkipForward" class="p-2 hover:bg-white/10 rounded-lg transition">⏩</button>
                 </div>
                 <div id="timeDisplay" class="text-sm text-purple-200">0:00 / 0:00</div>
@@ -93,7 +92,11 @@
     <audio id="audioPlayer"></audio>
 
     <script>
-        let podcasts = [];
+        let podcasts = [
+            { id: 1, title: "Tech Talk Daily", author: "Marco Rossi", description: "Le ultime novità dal mondo della tecnologia", episodes: [{ id: 1, title: "AI e futuro del lavoro", duration: "45:20", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" }, { id: 2, title: "Blockchain spiegata semplice", duration: "38:15", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" }] },
+            { id: 2, title: "Storie Italiane", author: "Laura Bianchi", description: "Racconti e leggende della nostra storia", episodes: [{ id: 3, title: "I Medici di Firenze", duration: "52:30", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }] }
+        ];
+
         let selectedPodcast = null;
         let currentEpisode = null;
         let isPlaying = false;
@@ -108,14 +111,14 @@
 
         function renderPodcasts() {
             podcastList.innerHTML = podcasts.map((podcast, index) => `
-                <div onclick="selectPodcast(${index})" class="p-4 rounded-lg cursor-pointer transition ${selectedPodcast === podcast ? 'bg-purple-500' : 'bg-white/5 hover:bg-white/10'}">
+                <div onclick="selectPodcast(${index})" class="p-4 rounded-lg cursor-pointer transition ${selectedPodcast === podcasts[index] ? 'bg-purple-500' : 'bg-white/5 hover:bg-white/10'}">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             <h3 class="font-semibold">${podcast.title}</h3>
                             <p class="text-sm text-purple-200">${podcast.author}</p>
                             <p class="text-xs text-purple-300 mt-1">${podcast.episodes.length} episodi</p>
                         </div>
-                        <button onclick="event.stopPropagation(); deletePodcast(${index})" class="p-2 hover:bg-red-500 rounded-lg transition">🗑</button>
+                        <button onclick="event.stopPropagation(); deletePodcast(${index})" class="p-2 hover:bg-red-500 rounded-lg transition">🗑️</button>
                     </div>
                 </div>
             `).join('');
@@ -129,13 +132,16 @@
             document.getElementById('detailAuthor').textContent = selectedPodcast.author;
             document.getElementById('detailDescription').textContent = selectedPodcast.description;
 
-            episodeList.innerHTML = selectedPodcast.episodes.map((ep, idx) => `
+            episodeList.innerHTML = selectedPodcast.episodes.map(ep => `
                 <div class="p-4 rounded-lg transition ${currentEpisode === ep ? 'bg-purple-500' : 'bg-white/5 hover:bg-white/10'}">
                     <div class="flex justify-between items-center">
                         <div class="flex-1">
                             <h4 class="font-semibold">${ep.title}</h4>
+                            <p class="text-sm text-purple-200">${ep.duration}</p>
                         </div>
-                        <button onclick='playEpisode(${index}, ${idx})' class="p-3 bg-purple-600 hover:bg-purple-700 rounded-full transition">▶️</button>
+                        <button onclick='playEpisode(${JSON.stringify(ep).replace(/'/g,"&apos;")})' class="p-3 bg-purple-600 hover:bg-purple-700 rounded-full transition">
+                            ${currentEpisode === ep && isPlaying ? '⏸️' : '▶️'}
+                        </button>
                     </div>
                 </div>
             `).join('');
@@ -145,76 +151,64 @@
             renderPodcasts();
         }
 
-        function playEpisode(pIndex, eIndex) {
-            const episode = podcasts[pIndex].episodes[eIndex];
-            currentEpisode = episode;
-            audio.src = episode.audioUrl;
-            document.getElementById('playerEpisodeTitle').textContent = episode.title;
-            document.getElementById('playerPodcastTitle').textContent = podcasts[pIndex].title;
-            player.classList.remove('hidden');
-            audio.play();
-            isPlaying = true;
+        function playEpisode(ep) {
+            if (currentEpisode === ep && isPlaying) {
+                audio.pause();
+                isPlaying = false;
+            } else {
+                if (currentEpisode !== ep) {
+                    currentEpisode = ep;
+                    audio.src = ep.url;
+                    document.getElementById('playerEpisodeTitle').textContent = ep.title;
+                    document.getElementById('playerPodcastTitle').textContent = selectedPodcast.title;
+                    player.classList.remove('hidden');
+                }
+                audio.play();
+                isPlaying = true;
+            }
         }
 
         document.getElementById('btnAddPodcast').onclick = () => addForm.classList.toggle('hidden');
-
         document.getElementById('btnSavePodcast').onclick = () => {
             const title = document.getElementById('inputTitle').value;
             const author = document.getElementById('inputAuthor').value;
             const description = document.getElementById('inputDescription').value;
-            const file = document.getElementById('inputAudio').files[0];
-
-            if (!title || !author || !file) return alert("Compila tutti i campi e scegli un file audio");
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                podcasts.push({
-                    title,
-                    author,
-                    description,
-                    episodes: [{ title, audioUrl: e.target.result }]
-                });
-                renderPodcasts();
-                addForm.classList.add('hidden');
+            if (title && author) {
+                podcasts.push({ id: Date.now(), title, author, description, episodes: [] });
                 document.getElementById('inputTitle').value = '';
                 document.getElementById('inputAuthor').value = '';
                 document.getElementById('inputDescription').value = '';
-                document.getElementById('inputAudio').value = '';
-            };
-            reader.readAsDataURL(file);
+                addForm.classList.add('hidden');
+                renderPodcasts();
+            }
         };
 
         function deletePodcast(index) {
-            if (selectedPodcast === podcasts[index]) {
+            const isSelected = selectedPodcast === podcasts[index];
+            podcasts.splice(index, 1);
+            if (isSelected) {
                 selectedPodcast = null;
                 podcastDetails.classList.add('hidden');
                 emptyState.classList.remove('hidden');
             }
-            podcasts.splice(index, 1);
             renderPodcasts();
         }
 
-        // Player controlli
-        document.getElementById('btnPlayPause').onclick = () => {
-            if (isPlaying) audio.pause();
-            else audio.play();
-            isPlaying = !isPlaying;
-        };
-
-        document.getElementById('btnSkipBack').onclick = () => audio.currentTime -= 10;
-        document.getElementById('btnSkipForward').onclick = () => audio.currentTime += 10;
-        document.getElementById('progressBar').onclick = (e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            audio.currentTime = (x / rect.width) * audio.duration;
-        };
-
         audio.addEventListener('timeupdate', () => {
             const current = audio.currentTime;
-            const duration = audio.duration || 0;
+            const duration = audio.duration;
             document.getElementById('timeDisplay').textContent = `${Math.floor(current/60)}:${Math.floor(current%60).toString().padStart(2,'0')} / ${Math.floor(duration/60)}:${Math.floor(duration%60).toString().padStart(2,'0')}`;
             document.getElementById('progressFill').style.width = `${(current/duration)*100 || 0}%`;
         });
+
+        audio.addEventListener('ended', () => { isPlaying = false; });
+
+        document.getElementById('btnPlayPause').onclick = () => { isPlaying ? audio.pause() : audio.play(); isPlaying = !isPlaying; };
+        document.getElementById('btnSkipBack').onclick = () => audio.currentTime -= 10;
+        document.getElementById('btnSkipForward').onclick = () => audio.currentTime += 10;
+        document.getElementById('progressBar').onclick = (e) => { const rect = e.currentTarget.getBoundingClientRect(); const x = e.clientX - rect.left; audio.currentTime = (x / rect.width) * audio.duration; };
+
+        renderPodcasts();
     </script>
 </body>
 </html>
