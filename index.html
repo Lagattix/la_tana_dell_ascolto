@@ -2,145 +2,180 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>La tana dell'ascolto</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: white;
+    margin: 0;
+    padding: 20px;
+  }
+  button {
+    cursor: pointer;
+  }
+  .card {
+    background: #1e1e1e;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+  }
+  img {
+    max-width: 100%;
+    border-radius: 10px;
+  }
+  input, textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: none;
+  }
+  .hidden {
+    display: none;
+  }
+</style>
 </head>
+<body>
 
-<body class="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white">
+<h1>🎧 La tana dell'ascolto</h1>
 
-<div class="p-6 pb-32 max-w-7xl mx-auto">
-
-<header class="mb-8">
-<h1 class="text-4xl font-bold flex items-center gap-3">
-🎧 La tana dell'ascolto
-</h1>
-<p class="text-purple-200">Crea podcast. Poi racconta storie.</p>
-</header>
-
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- CREA PODCAST -->
+<div class="card">
+  <h2>Crea podcast</h2>
+  <input id="pImage" type="file" accept="image/*">
+  <input id="pTitle" placeholder="Titolo podcast">
+  <input id="pAuthor" placeholder="Autore">
+  <textarea id="pDesc" placeholder="Descrizione"></textarea>
+  <button onclick="createPodcast()">Crea podcast</button>
+</div>
 
 <!-- LISTA PODCAST -->
-<div class="bg-white/10 rounded-2xl p-6">
-<div class="flex justify-between items-center mb-4">
-<h2 class="text-2xl font-semibold">Podcast</h2>
-<button id="btnAddPodcast" class="bg-purple-500 px-3 py-1 rounded">+</button>
-</div>
+<div id="podcastList"></div>
 
-<!-- FORM PODCAST -->
-<div id="addForm" class="hidden space-y-2 mb-4">
-<input id="imgInput" type="file" accept="image/*" class="w-full">
-<input id="titleInput" placeholder="Titolo" class="w-full p-2 bg-white/10 rounded">
-<input id="authorInput" placeholder="Autore" class="w-full p-2 bg-white/10 rounded">
-<textarea id="descInput" placeholder="Descrizione" class="w-full p-2 bg-white/10 rounded"></textarea>
-<button id="savePodcast" class="w-full bg-green-500 py-2 rounded">Crea podcast</button>
-</div>
-
-<div id="podcastList" class="space-y-2"></div>
-</div>
-
-<!-- DETTAGLI -->
-<div class="lg:col-span-2 bg-white/10 rounded-2xl p-6">
-<div id="empty" class="text-center text-purple-300">Seleziona un podcast</div>
-
-<div id="details" class="hidden space-y-4">
-<img id="detailImg" class="w-40 h-40 object-cover rounded-xl">
-<h2 id="detailTitle" class="text-3xl font-bold"></h2>
-<p id="detailAuthor" class="text-purple-200"></p>
-<p id="detailDesc" class="text-purple-300"></p>
-
-<button id="addEpisodeBtn" class="hidden bg-purple-500 px-4 py-2 rounded">
-➕ Aggiungi episodio
-</button>
-
-<div id="episodes" class="space-y-2"></div>
-</div>
-</div>
-
-</div>
-</div>
-
-<!-- PLAYER -->
-<audio id="audio"></audio>
+<!-- DETTAGLIO PODCAST -->
+<div id="podcastDetail" class="hidden card"></div>
 
 <script>
-/* USER */
-let userId = localStorage.getItem("userId");
-if (!userId) {
-  userId = crypto.randomUUID();
-  localStorage.setItem("userId", userId);
+/* IDENTITÀ UTENTE */
+let currentUserId = localStorage.getItem("userId");
+if (!currentUserId) {
+  currentUserId = crypto.randomUUID();
+  localStorage.setItem("userId", currentUserId);
 }
 
-/* DATA */
+/* DATI */
 let podcasts = [];
-let selected = null;
+let selectedPodcast = null;
 
-/* DOM */
-const podcastList = document.getElementById("podcastList");
-const addForm = document.getElementById("addForm");
-const details = document.getElementById("details");
-const empty = document.getElementById("empty");
-const addEpisodeBtn = document.getElementById("addEpisodeBtn");
+/* CREA PODCAST */
+function createPodcast() {
+  const imgFile = pImage.files[0];
+  const title = pTitle.value;
+  const author = pAuthor.value;
+  const desc = pDesc.value;
 
-/* EVENTS */
-document.getElementById("btnAddPodcast").onclick = () => {
-  addForm.classList.toggle("hidden");
-};
-
-document.getElementById("savePodcast").onclick = () => {
-  const imgFile = document.getElementById("imgInput").files[0];
-  if (!imgFile) return alert("Serve un'immagine");
+  if (!imgFile || !title || !author) {
+    alert("Immagine, titolo e autore obbligatori");
+    return;
+  }
 
   const reader = new FileReader();
   reader.onload = () => {
     podcasts.push({
       id: Date.now(),
-      title: titleInput.value,
-      author: authorInput.value,
-      description: descInput.value,
+      title,
+      author,
+      desc,
       image: reader.result,
-      creatorId: userId,
+      creatorId: currentUserId,
       episodes: []
     });
-    addForm.classList.add("hidden");
-    render();
+    renderList();
   };
   reader.readAsDataURL(imgFile);
-};
-
-/* RENDER */
-function render() {
-  podcastList.innerHTML = podcasts.map(p => `
-    <div onclick="openPodcast(${p.id})"
-      class="p-3 bg-white/5 rounded cursor-pointer hover:bg-white/10">
-      <h3 class="font-semibold">${p.title}</h3>
-      <p class="text-sm text-purple-200">${p.author}</p>
-    </div>
-  `).join("");
 }
 
-window.openPodcast = (id) => {
-  selected = podcasts.find(p => p.id === id);
-  empty.classList.add("hidden");
-  details.classList.remove("hidden");
+/* LISTA */
+function renderList() {
+  podcastList.innerHTML = "";
+  podcasts.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <img src="${p.image}">
+      <h3>${p.title}</h3>
+      <p>${p.author}</p>
+      <button onclick="openPodcast(${p.id})">Apri</button>
+    `;
+    podcastList.appendChild(div);
+  });
+}
 
-  detailImg.src = selected.image;
-  detailTitle.textContent = selected.title;
-  detailAuthor.textContent = selected.author;
-  detailDesc.textContent = selected.description;
+/* APRI PODCAST */
+function openPodcast(id) {
+  selectedPodcast = podcasts.find(p => p.id === id);
+  podcastDetail.classList.remove("hidden");
 
-  episodes.innerHTML = selected.episodes.length
-    ? selected.episodes.map(e => `<div class="bg-white/5 p-2 rounded">${e.title}</div>`).join("")
-    : `<p class="text-purple-300">Nessun episodio</p>`;
+  let html = `
+    <img src="${selectedPodcast.image}">
+    <h2>${selectedPodcast.title}</h2>
+    <p>${selectedPodcast.desc}</p>
+    <h3>Episodi</h3>
+  `;
 
-  if (selected.creatorId === userId) {
-    addEpisodeBtn.classList.remove("hidden");
+  if (selectedPodcast.episodes.length === 0) {
+    html += `<p>Nessun episodio ancora disponibile</p>`;
   } else {
-    addEpisodeBtn.classList.add("hidden");
+    selectedPodcast.episodes.forEach(ep => {
+      html += `
+        <div class="card">
+          <strong>${ep.title}</strong>
+          <audio controls src="${ep.audio}"></audio>
+        </div>
+      `;
+    });
   }
-};
 
-render();
+  if (selectedPodcast.creatorId === currentUserId) {
+    html += `
+      <button id="addEpisodeBtn">➕ Aggiungi episodio</button>
+      <div id="episodeForm" class="hidden">
+        <input id="epTitle" placeholder="Titolo episodio">
+        <input id="epAudio" type="file" accept="audio/*">
+        <button id="saveEpisode">Salva episodio</button>
+      </div>
+    `;
+  }
+
+  podcastDetail.innerHTML = html;
+
+  /* EVENTI */
+  if (selectedPodcast.creatorId === currentUserId) {
+    document.getElementById("addEpisodeBtn").onclick = () => {
+      document.getElementById("episodeForm").classList.toggle("hidden");
+    };
+
+    document.getElementById("saveEpisode").onclick = () => {
+      const title = epTitle.value;
+      const file = epAudio.files[0];
+      if (!title || !file) return alert("Titolo e audio obbligatori");
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        selectedPodcast.episodes.push({
+          id: Date.now(),
+          title,
+          audio: reader.result
+        });
+        openPodcast(selectedPodcast.id);
+      };
+      reader.readAsDataURL(file);
+    };
+  }
+}
 </script>
 
 </body>
